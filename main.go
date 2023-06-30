@@ -70,7 +70,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func Run(folderID string) []string {
+func Fetch(folderID string) []string {
 	docs := []string{}
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
