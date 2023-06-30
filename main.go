@@ -1,4 +1,4 @@
-package gdriveExport
+package gdrive
 
 import (
 	"context"

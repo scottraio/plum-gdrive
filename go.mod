@@ -1,5 +1,4 @@
-module github.com/scottraio/gdrive-export
-
+module github.com/scottraio/plum-gdrive
 go 1.20
 
 require (
