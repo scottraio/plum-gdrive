@@ -70,8 +70,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func Fetch(folderID string) []string {
-	docs := []string{}
+func Fetch(folderID string) ([]*drive.File, *drive.Service) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -98,24 +97,24 @@ func Fetch(folderID string) []string {
 	fmt.Println("Files:")
 	if len(r.Files) == 0 {
 		fmt.Println("No files found.")
+		return nil, srv
 	} else {
-		for _, i := range r.Files {
-			//
-			exportURL := srv.Files.Export(i.Id, "text/csv")
+		return r.Files, srv
+	}
+}
 
-			resp, err := exportURL.Download()
-			if err != nil {
-				log.Fatalf("Unable to retrieve data from file: %v", err)
-			}
+func ExportToCSV(file *drive.File, srv drive.Service) string {
+	exportURL := srv.Files.Export(file.Id, "text/csv")
 
-			defer resp.Body.Close()
-
-			// Read the exported CSV data
-			data, _ := ioutil.ReadAll(resp.Body)
-			docs = append(docs, string(data))
-		}
-
+	resp, err := exportURL.Download()
+	if err != nil {
+		log.Fatalf("Unable to retrieve data from file: %v", err)
 	}
 
-	return docs
+	defer resp.Body.Close()
+
+	// Read the exported CSV data
+	data, _ := ioutil.ReadAll(resp.Body)
+	return string(data)
+
 }
