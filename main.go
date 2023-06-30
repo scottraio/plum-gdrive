@@ -116,5 +116,19 @@ func ExportToCSV(file *drive.File, srv *drive.Service) string {
 	// Read the exported CSV data
 	data, _ := ioutil.ReadAll(resp.Body)
 	return string(data)
+}
 
+func ExportToTXT(file *drive.File, srv *drive.Service) string {
+	exportURL := srv.Files.Export(file.Id, "text/plain")
+
+	resp, err := exportURL.Download()
+	if err != nil {
+		log.Fatalf("Unable to retrieve data from file: %v", err)
+	}
+
+	defer resp.Body.Close()
+
+	// Read the exported CSV data
+	data, _ := ioutil.ReadAll(resp.Body)
+	return string(data)
 }
