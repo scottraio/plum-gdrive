@@ -108,7 +108,7 @@ func ExportToCSV(file *drive.File, srv *drive.Service) string {
 
 	resp, err := exportURL.Download()
 	if err != nil {
-		log.Fatalf("Unable to retrieve data from file: %v", err)
+		log.Fatalf("Unable to retrieve data from file: %v %s %s", err, file.Id, file.Name)
 	}
 
 	defer resp.Body.Close()
@@ -123,7 +123,7 @@ func ExportToTXT(file *drive.File, srv *drive.Service) string {
 
 	resp, err := exportURL.Download()
 	if err != nil {
-		log.Fatalf("Unable to retrieve data from file: %v", err)
+		log.Fatalf("Unable to retrieve data from file: %v %s %s", err, file.Id, file.Name)
 	}
 
 	defer resp.Body.Close()
