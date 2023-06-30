@@ -15,6 +15,53 @@ import (
 	"google.golang.org/api/option"
 )
 
+func Run(folderID string) {
+	ctx := context.Background()
+	b, err := os.ReadFile("credentials.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved token.json.
+	config, err := google.ConfigFromJSON(b, drive.DriveScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+	client := getClient(config)
+
+	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Drive client: %v", err)
+	}
+
+	r, err := srv.Files.List().SupportsTeamDrives(true).IncludeItemsFromAllDrives(true).Q("'" + folderID + "' in parents").Fields("files(id, name, mimeType)").Do()
+
+	if err != nil {
+		log.Fatalf("Unable to retrieve files: %v", err)
+	}
+	fmt.Println("Files:")
+	if len(r.Files) == 0 {
+		fmt.Println("No files found.")
+	} else {
+		for _, i := range r.Files {
+			//
+			exportURL := srv.Files.Export(i.Id, "text/csv")
+
+			resp, err := exportURL.Download()
+			if err != nil {
+				log.Fatalf("Unable to retrieve data from file: %v", err)
+			}
+
+			defer resp.Body.Close()
+
+			// Read the exported CSV data
+			data, _ := ioutil.ReadAll(resp.Body)
+			println(string(data))
+		}
+
+	}
+}
+
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
@@ -68,51 +115,4 @@ func saveToken(path string, token *oauth2.Token) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
-}
-
-func Run(folderID string) {
-	ctx := context.Background()
-	b, err := os.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, drive.DriveScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	client := getClient(config)
-
-	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Drive client: %v", err)
-	}
-
-	r, err := srv.Files.List().SupportsTeamDrives(true).IncludeItemsFromAllDrives(true).Q("'" + folderID + "' in parents").Fields("files(id, name, mimeType)").Do()
-
-	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
-	}
-	fmt.Println("Files:")
-	if len(r.Files) == 0 {
-		fmt.Println("No files found.")
-	} else {
-		for _, i := range r.Files {
-			//
-			exportURL := srv.Files.Export(i.Id, "text/csv")
-
-			resp, err := exportURL.Download()
-			if err != nil {
-				log.Fatalf("Unable to retrieve data from file: %v", err)
-			}
-
-			defer resp.Body.Close()
-
-			// Read the exported CSV data
-			data, _ := ioutil.ReadAll(resp.Body)
-			println(string(data))
-		}
-
-	}
 }
