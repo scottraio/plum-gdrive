@@ -103,7 +103,7 @@ func Fetch(folderID string) ([]*drive.File, *drive.Service) {
 	}
 }
 
-func ExportToCSV(file *drive.File, srv drive.Service) string {
+func ExportToCSV(file *drive.File, srv *drive.Service) string {
 	exportURL := srv.Files.Export(file.Id, "text/csv")
 
 	resp, err := exportURL.Download()
