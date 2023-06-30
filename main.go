@@ -70,7 +70,8 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func Run(folderID string) {
+func Run(folderID string) []string {
+	docs := []string{}
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -111,8 +112,10 @@ func Run(folderID string) {
 
 			// Read the exported CSV data
 			data, _ := ioutil.ReadAll(resp.Body)
-			println(string(data))
+			docs = append(docs, string(data))
 		}
 
 	}
+
+	return docs
 }
