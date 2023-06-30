@@ -1,25 +1,19 @@
-package main
+package gdriveExport
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
-
-func main() {
-	Run()
-}
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
@@ -76,7 +70,7 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func Run() {
+func Run(folderID string) {
 	ctx := context.Background()
 	b, err := os.ReadFile("credentials.json")
 	if err != nil {
@@ -95,7 +89,6 @@ func Run() {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
-	folderID := "1E8_BwQAL2r2N8wkZBZ_JRGdvqqwvm4hc"
 	r, err := srv.Files.List().SupportsTeamDrives(true).IncludeItemsFromAllDrives(true).Q("'" + folderID + "' in parents").Fields("files(id, name, mimeType)").Do()
 
 	if err != nil {
@@ -105,7 +98,6 @@ func Run() {
 	if len(r.Files) == 0 {
 		fmt.Println("No files found.")
 	} else {
-		var parts []string
 		for _, i := range r.Files {
 			//
 			exportURL := srv.Files.Export(i.Id, "text/csv")
@@ -119,58 +111,8 @@ func Run() {
 
 			// Read the exported CSV data
 			data, _ := ioutil.ReadAll(resp.Body)
-			parts = append(parts, findParts(string(data))...)
-
-			fmt.Printf("%s (%s)\n", i.Name, i.Id)
+			println(string(data))
 		}
 
-		for _, part := range findUniqueParts(parts) {
-			http.Get("http://localhost:8080/mark_as_sellable/" + part)
-		}
 	}
-}
-
-func findParts(csvString string) []string {
-	reader := csv.NewReader(strings.NewReader(csvString))
-	records, err := reader.ReadAll()
-	if err != nil {
-		return nil
-	}
-
-	var partNumbers []string
-
-	for _, row := range records {
-		for columnIndex, column := range row {
-			if columnIndex > 1 && isValidPartNumber(column) {
-				partNumbers = append(partNumbers, column)
-			}
-		}
-	}
-
-	return partNumbers
-}
-
-func findUniqueParts(partNumbers []string) []string {
-	uniqueParts := make([]string, 0, len(partNumbers))
-	encountered := make(map[string]bool)
-
-	for _, part := range partNumbers {
-		if !encountered[part] {
-			uniqueParts = append(uniqueParts, part)
-			encountered[part] = true
-		}
-	}
-
-	return uniqueParts
-}
-
-func isValidPartNumber(partNumber string) bool {
-	// Check if the part number consists of one word
-	if strings.Contains(partNumber, " ") {
-		return false
-	}
-
-	// Check if the length is between 5 and 10 characters
-	length := len(partNumber)
-	return length >= 4 && length <= 15
 }
